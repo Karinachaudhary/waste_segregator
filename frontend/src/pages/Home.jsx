@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 const STATS = [
   { value: '2.4M+', label: 'Items Scanned' },
@@ -13,31 +13,89 @@ const MOCK_RESULTS = [
 ];
 
 export default function Home() {
+  const heroFileRef = useRef(null);
   const [uploadDragging, setUploadDragging] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
 
-  // Simulated AI scan process
-  const simulateScan = () => {
+  // Smooth Scroll Helper Function to navigate to #upload section
+  const scrollToUpload = () => {
+    const uploadElement = document.getElementById('upload');
+    if (uploadElement) {
+      uploadElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  // Real or Demo Scan Handler for Hero Widget
+  const handleHeroFileSelected = async (file) => {
+    if (!file) return;
+
     setScanning(true);
     setScanResult(null);
 
-    setTimeout(() => {
-      setScanning(false);
-      // Pick a random result for demonstration
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+
+      reader.onload = async () => {
+        const base64Data = reader.result.split(',')[1];
+        const mimeType = file.type || 'image/jpeg';
+
+        const response = await fetch("http://localhost:5001/api/waste/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageBase64: base64Data,
+            mimeType: mimeType,
+          }),
+        });
+
+        const resData = await response.json();
+        if (resData.success && resData.data) {
+          setScanResult(resData.data);
+        } else {
+          // Fallback demo if backend is offline
+          const randomResult = MOCK_RESULTS[Math.floor(Math.random() * MOCK_RESULTS.length)];
+          setScanResult(randomResult);
+        }
+        setScanning(false);
+      };
+    } catch (err) {
+      console.error("Hero scan error:", err);
+      // Fallback demo result
       const randomResult = MOCK_RESULTS[Math.floor(Math.random() * MOCK_RESULTS.length)];
       setScanResult(randomResult);
-    }, 1800);
+      setScanning(false);
+    }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     setUploadDragging(false);
-    simulateScan();
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleHeroFileSelected(file);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleHeroFileSelected(file);
+    }
   };
 
   return (
-    <section className="relative pt-32 pb-24 px-6 overflow-hidden">
+    <section className="relative pt-32 pb-24 px-6 overflow-hidden bg-[#f8fdf9]">
+      {/* Hidden File Input for Hero Card */}
+      <input
+        ref={heroFileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       {/* Background Mesh Gradients */}
       <div
         className="absolute inset-0 opacity-40 pointer-events-none"
@@ -55,36 +113,46 @@ export default function Home() {
 
       <div className="relative max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
+          
           {/* Left Column - Hero Content */}
           <div>
             <div className="inline-flex items-center gap-2 bg-[#d8f3e0] text-[#1a8049] text-xs font-semibold px-3.5 py-1.5 rounded-full mb-6 border border-[#b4e8c3]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#27a05e] animate-pulse" />
               AI-Powered Waste Intelligence
             </div>
+            
             <h1 className="font-serif text-5xl lg:text-6xl font-bold leading-[1.08] text-[#0e1f16] mb-6">
               Sort smarter.{' '}
               <span className="text-[#1a8049]">Waste less.</span>{' '}
               Live greener.
             </h1>
+            
             <p className="text-lg text-[#3d6b50] leading-relaxed mb-8 max-w-lg">
               Snap a photo of any waste item and EcoSnap's AI instantly tells you exactly where it belongs — recyclable, compost, hazardous, or landfill — with local rules baked in.
             </p>
+            
             <div className="flex flex-wrap gap-3">
+              {/* Try a Free Scan Button -> Scrolls to #upload */}
               <button
+                onClick={scrollToUpload}
                 className="group flex items-center gap-2 bg-[#1a8049] text-white font-semibold px-7 py-3.5 rounded-full hover:bg-[#156639] transition-all hover:shadow-xl hover:shadow-[#1a8049]/25 active:scale-95 text-sm"
-                onClick={simulateScan}
               >
                 Try a Free Scan
                 <span className="group-hover:translate-x-0.5 transition-transform">→</span>
               </button>
-              <button className="flex items-center gap-2 border border-[#b4e8c3] text-[#1a8049] font-semibold px-7 py-3.5 rounded-full hover:bg-[#d8f3e0] transition-all text-sm">
+
+              {/* Watch Demo / Scroll Button */}
+              <button 
+                onClick={scrollToUpload}
+                className="flex items-center gap-2 border border-[#b4e8c3] text-[#1a8049] font-semibold px-7 py-3.5 rounded-full hover:bg-[#d8f3e0] transition-all text-sm"
+              >
                 <span>▶</span> Watch Demo
               </button>
             </div>
 
             {/* Statistics */}
             <div className="flex flex-wrap gap-6 mt-10">
-              {STATS.map(s => (
+              {STATS.map((s) => (
                 <div key={s.label}>
                   <div className="text-2xl font-bold text-[#1a8049]">{s.value}</div>
                   <div className="text-xs text-[#5a8a6e] font-medium">{s.label}</div>
@@ -112,7 +180,7 @@ export default function Home() {
                   uploadDragging ? 'ring-2 ring-[#27a05e]' : ''
                 }`}
                 style={{ height: 220, background: 'linear-gradient(135deg, #d8f3e0 0%, #b4e8c3 100%)' }}
-                onDragOver={e => {
+                onDragOver={(e) => {
                   e.preventDefault();
                   setUploadDragging(true);
                 }}
@@ -126,11 +194,13 @@ export default function Home() {
                       📦
                     </div>
                     <p className="text-[#3d6b50] text-sm font-medium">Drop an item or tap to scan</p>
+
+                    {/* Scan Now Button -> Smooth Scroll to #upload */}
                     <button
-                      onClick={simulateScan}
-                      className="text-xs bg-[#1a8049] text-white px-4 py-1.5 rounded-full font-semibold hover:bg-[#156639] transition"
+                      onClick={scrollToUpload}
+                      className="bg-[#1a8049] text-white text-xs font-semibold px-5 py-2 rounded-full hover:bg-[#156639] transition-all hover:shadow-md active:scale-95 flex items-center gap-1.5"
                     >
-                      Scan Demo Item
+                      📷 Scan Now
                     </button>
                   </div>
                 )}
@@ -171,8 +241,11 @@ export default function Home() {
                     <div className="text-[10px] text-[#5a8a6e]">
                       Confidence: {scanResult.confidence}%
                     </div>
-                    <button onClick={simulateScan} className="mt-1 text-[10px] text-[#1a8049] underline hover:text-[#156639]">
-                      Scan another
+                    <button 
+                      onClick={scrollToUpload} 
+                      className="mt-1 text-[10px] text-[#1a8049] underline hover:text-[#156639]"
+                    >
+                      Scan another item
                     </button>
                   </div>
                 )}
@@ -180,7 +253,7 @@ export default function Home() {
 
               {/* Bottom Tag Pills */}
               <div className="px-5 pb-5 flex flex-wrap gap-2">
-                {['♻️ Recyclable', '🌱 Organic', '⚠️ Hazardous', '💻 E-Waste'].map(tag => (
+                {['♻️ Recyclable', '🌱 Organic', '⚠️ Hazardous', '💻 E-Waste'].map((tag) => (
                   <span
                     key={tag}
                     className="text-xs bg-[#f0faf3] text-[#1a8049] border border-[#b4e8c3] px-3 py-1 rounded-full font-medium"
@@ -192,14 +265,15 @@ export default function Home() {
             </div>
 
             {/* Floating Impact Badge */}
-            <div className="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-lg border border-[#b4e8c3] px-4 py-3 flex items-center gap-3">
+            {/* <div className="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-lg border border-[#b4e8c3] px-4 py-3 flex items-center gap-3">
               <div className="text-2xl">🌍</div>
               <div>
                 <div className="text-sm font-bold text-[#0e1f16]">1.2 kg CO₂ saved</div>
                 <div className="text-xs text-[#5a8a6e]">this week by you</div>
               </div>
-            </div>
+            </div> */}
           </div>
+
         </div>
       </div>
     </section>
