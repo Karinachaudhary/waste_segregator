@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { wasteApi } from '../services/api';
 
 const STATS = [
   { value: '2.4M+', label: 'Items Scanned' },
@@ -41,16 +42,12 @@ export default function Home() {
         const base64Data = reader.result.split(',')[1];
         const mimeType = file.type || 'image/jpeg';
 
-        const response = await fetch("http://localhost:5001/api/waste/scan", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            imageBase64: base64Data,
-            mimeType: mimeType,
-          }),
+        const response = await wasteApi.scanWasteItem({
+          imageBase64: base64Data,
+          mimeType: mimeType,
         });
 
-        const resData = await response.json();
+        const resData = response.data;
         if (resData.success && resData.data) {
           setScanResult(resData.data);
         } else {

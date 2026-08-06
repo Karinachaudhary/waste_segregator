@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import Camera from '../components/Camera';
+import { wasteApi } from '../services/api';
 
 const MOCK_RESULTS = [
   { type: 'PET Plastic Water Bottle', bin: 'Yellow Bin · Recyclable Plastic', color: '#1a8049', confidence: 99.4 },
@@ -31,16 +32,12 @@ export default function Upload() {
   // 2. Helper function to send Base64 payload to Node.js Backend
   const sendToBackend = async (base64Data, mimeType) => {
     try {
-      const response = await fetch("http://localhost:5001/api/waste/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageBase64: base64Data,
-          mimeType: mimeType,
-        }),
+      const response = await wasteApi.scanWasteItem({
+        imageBase64: base64Data,
+        mimeType: mimeType,
       });
 
-      const resData = await response.json();
+      const resData = response.data;
       console.log("📥 Backend Response:", resData);
 
       if (resData.success && resData.data) {
@@ -51,7 +48,7 @@ export default function Upload() {
       }
     } catch (error) {
       console.error("Backend fetch failed:", error);
-      setError("Server connection failed");
+      setError(error.response?.data?.error || "Server connection failed");
     } finally {
       setScanning(false);
     }
@@ -139,7 +136,6 @@ export default function Upload() {
   };
 
   return (
-    <section id="upload" className="py-20 px-6 bg-[#f0faf3]">
     <section id="upload" className="py-20 px-6 bg-[#f0faf3]">
       <div className="max-w-3xl mx-auto text-center">
         <h2 className="font-serif text-4xl font-bold text-[#0e1f16] mb-4">
@@ -275,6 +271,5 @@ export default function Upload() {
         }}
       />
     </section>
-  </section>
   );
 }

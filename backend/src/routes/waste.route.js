@@ -1,9 +1,13 @@
 import express from "express";
-import {predictWaste} from "../controllers/waste.controller.js"
+import { scanWaste, predictWaste } from "../controllers/waste.controller.js";
 import { upload } from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
-router.post("/predictwaste", upload.single("image"),predictWaste);
+// Primary endpoint used by frontend (Base64 JSON or optional file upload)
+router.post("/scan", upload.single("image"), scanWaste);
 
-export default router;
+// Backward compatible endpoint for file uploads
+router.post("/predictwaste", upload.single("image"), predictWaste);
+
+export default router;

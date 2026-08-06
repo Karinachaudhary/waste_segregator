@@ -52,12 +52,18 @@ export default function Camera({ isOpen, onClose, onCaptureSuccess }) {
         </div>
 
         {/* Viewport Area */}
-        <div className="relative w-full h-[360px] bg-black flex items-center justify-center overflow-hidden">
+        <div className="relative w-full h-90 bg-black flex items-center justify-center overflow-hidden">
           {cameraError ? (
-            <div className="text-center px-6 text-red-300">
-              <div className="text-4xl mb-2">📷⚠️</div>
+            <div className="text-center px-6 text-red-300 flex flex-col items-center gap-2">
+              <div className="text-4xl mb-1">📷⚠️</div>
               <p className="text-sm font-semibold">Camera Access Denied or Unavailable</p>
-              <p className="text-xs text-gray-400 mt-1">Please allow camera permissions in your browser to scan items.</p>
+              <p className="text-xs text-gray-400">Please allow camera permissions in your browser to scan items.</p>
+              <button
+                onClick={() => setCameraError(false)}
+                className="mt-2 text-xs bg-[#1a8049] text-white px-4 py-1.5 rounded-full hover:bg-[#156639] transition-colors"
+              >
+                🔄 Retry Camera Permission
+              </button>
             </div>
           ) : capturedImage ? (
             // Captured Snapshot Preview
