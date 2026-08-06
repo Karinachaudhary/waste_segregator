@@ -13,8 +13,14 @@ const app = express();
 // Increase JSON body limit to handle Base64 image data
 app.use(express.json({ limit: "10mb" }));
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  process.env.CLIENT_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.NODE_ENV === "production" && !process.env.CLIENT_URL ? true : allowedOrigins,
   credentials: true,
 }));
 
