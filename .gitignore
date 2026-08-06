@@ -1,0 +1,15 @@
+# Environment variables (NEVER COMMIT)
+.env
+.env.local
+.env.*
+*.env
+
+# Dependencies & Build output
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+
+# System & Log files
+*.log
+.DS_Store
