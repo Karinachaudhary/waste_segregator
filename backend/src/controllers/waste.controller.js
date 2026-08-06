@@ -2,31 +2,37 @@
 
 import { analyzeWaste } from "../services/ai.service.js";
 
-export const predictWaste = async (req, res) => {
+export const scanWaste = async (req, res) => {
   try {
-    // Check if an image was uploaded
-    if (!req.file) {
+    const { imageBase64, mimeType } = req.body || {};
+    const file = req.file;
+
+    if (!file && !imageBase64) {
       return res.status(400).json({
         success: false,
-        message: "Please upload an image.",
+        error: "Please provide an image (either as a file upload or Base64 string).",
       });
     }
 
-    // Call the AI service
-    const result = await analyzeWaste(req.file);
-
-    // Send prediction to frontend
-    return res.status(200).json({
-      success: true,
-      prediction: result,
+    const result = await analyzeWaste({
+      imageBase64,
+      mimeType,
+      file,
     });
 
+    return res.status(200).json({
+      success: true,
+      data: result,
+      timestamp: new Date().toISOString(),
+    });
   } catch (error) {
-    console.error("Prediction Error:", error);
+    console.error("❌ Prediction Error:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Failed to analyze image.",
+      error: "Failed to analyze image.",
     });
   }
 };
+
+export const predictWaste = scanWaste;
